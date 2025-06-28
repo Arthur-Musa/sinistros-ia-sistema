@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema Inteligente de Sinistros</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        
+        .dashboard {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            border-radius: 25px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            background: #00ff00;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 255, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0); }
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #1e1e2e 0%, #252535 100%);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+            border-color: rgba(79, 172, 254, 0.3);
+        }
+        
+        .metric-label {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .metric-change {
+            font-size: 14px;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .positive { color: #00ff88; }
+        .negative { color: #ff4444; }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: #1e1e2e;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            color: #fff;
+        }
+        
+        .agent-status {
+            background: #1e1e2e;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .agent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .agent-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .agent-item:hover {
+            background: rgba(79, 172, 254, 0.1);
+            border-color: rgba(79, 172, 254, 0.3);
+        }
+        
+        .agent-name {
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .agent-icon {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        
+        .agent-status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+        
+        .status-idle {
+            background: rgba(255, 255, 0, 0.2);
+            color: #ffff00;
+            border: 1px solid rgba(255, 255, 0, 0.3);
+        }
+        
+        .recent-claims {
+            background: #1e1e2e;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .claims-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .claims-table th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            color: #888;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .claims-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .claims-table tr:hover {
+            background: rgba(79, 172, 254, 0.05);
+        }
+        
+        .claim-number {
+            font-weight: 500;
+            color: #4facfe;
+            cursor: pointer;
+        }
+        
+        .claim-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .status-approved {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff88;
+        }
+        
+        .status-pending {
+            background: rgba(255, 255, 0, 0.2);
+            color: #ffff00;
+        }
+        
+        .status-rejected {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff4444;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .floating-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+            font-size: 24px;
+            color: white;
+            border: none;
+        }
+        
+        .floating-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>Sistema Inteligente de Sinistros</h1>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Sistema Operacional</span>
+            </div>
+        </div>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Total de Sinistros</div>
+                <div class="metric-value">1,847</div>
+                <div class="metric-change positive">
+                    <span>↑ 12%</span>
+                    <span>vs. mês anterior</span>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-label">Taxa de Aprovação</div>
+                <div class="metric-value">78.4%</div>
+                <div class="metric-change positive">
+                    <span>↑ 3.2%</span>
+                    <span>vs. mês anterior</span>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-label">Tempo Médio de Análise</div>
+                <div class="metric-value">7.2 min</div>
+                <div class="metric-change positive">
+                    <span>↓ 45%</span>
+                    <span>com IA vs. manual</span>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-label">Valor Total Processado</div>
+                <div class="metric-value">R$ 8.4M</div>
+                <div class="metric-change positive">
+                    <span>↑ 18%</span>
+                    <span>este mês</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Análises por Tipo de Sinistro</h3>
+                    <select style="background: #2a2a3e; color: #fff; border: 1px solid #444; padding: 8px 15px; border-radius: 5px;">
+                        <option>Últimos 7 dias</option>
+                        <option>Últimos 30 dias</option>
+                        <option>Últimos 90 dias</option>
+                    </select>
+                </div>
+                <canvas id="claimsChart" width="400" height="200"></canvas>
+            </div>
+            
+            <div class="agent-status">
+                <h3 class="chart-title" style="margin-bottom: 20px;">Status dos Agentes</h3>
+                <div class="agent-list">
+                    <div class="agent-item">
+                        <div class="agent-name">
+                            <div class="agent-icon">📋</div>
+                            <span>Agente Triagem</span>
+                        </div>
+                        <span class="agent-status-badge status-active">Ativo</span>
+                    </div>
+                    <div class="agent-item">
+                        <div class="agent-name">
+                            <div class="agent-icon">🔍</div>
+                            <span>Agente Análise</span>
+                        </div>
+                        <span class="agent-status-badge status-active">Ativo</span>
+                    </div>
+                    <div class="agent-item">
+                        <div class="agent-name">
+                            <div class="agent-icon">💰</div>
+                            <span>Agente Cálculo</span>
+                        </div>
+                        <span class="agent-status-badge status-idle">Aguardando</span>
+                    </div>
+                    <div class="agent-item">
+                        <div class="agent-name">
+                            <div class="agent-icon">⚖️</div>
+                            <span>Agente Compliance</span>
+                        </div>
+                        <span class="agent-status-badge status-active">Ativo</span>
+                    </div>
+                    <div class="agent-item">
+                        <div class="agent-name">
+                            <div class="agent-icon">👔</div>
+                            <span>Gerente Sinistros</span>
+                        </div>
+                        <span class="agent-status-badge status-active">Ativo</span>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 25px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="font-size: 14px; color: #888;">Capacidade do Sistema</span>
+                        <span style="font-size: 14px; color: #4facfe;">78%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 78%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recent-claims">
+            <h3 class="chart-title">Sinistros Recentes</h3>
+            <table class="claims-table">
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Tipo</th>
+                        <th>Segurado</th>
+                        <th>Valor</th>
+                        <th>Tempo Análise</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="claim-number">SIN-2024-A8F3C9D1</span></td>
+                        <td>Automóvel</td>
+                        <td>João Silva</td>
+                        <td>R$ 45.000</td>
+                        <td>6.3 min</td>
+                        <td><span class="claim-status status-approved">Aprovado</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="claim-number">SIN-2024-B2E7A4C6</span></td>
+                        <td>Residencial</td>
+                        <td>Maria Santos</td>
+                        <td>R$ 150.000</td>
+                        <td>8.7 min</td>
+                        <td><span class="claim-status status-pending">Em Análise</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="claim-number">SIN-2024-C9D2F8E1</span></td>
+                        <td>Vida</td>
+                        <td>Pedro Costa</td>
+                        <td>R$ 500.000</td>
+                        <td>12.1 min</td>
+                        <td><span class="claim-status status-approved">Aprovado</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="claim-number">SIN-2024-D4A6B3F9</span></td>
+                        <td>Empresarial</td>
+                        <td>Tech Solutions Ltda</td>
+                        <td>R$ 280.000</td>
+                        <td>5.4 min</td>
+                        <td><span class="claim-status status-pending">Em Análise</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="claim-number">SIN-2024-E7C1D5A2</span></td>
+                        <td>Saúde</td>
+                        <td>Ana Oliveira</td>
+                        <td>R$ 35.000</td>
+                        <td>4.2 min</td>
+                        <td><span class="claim-status status-rejected">Negado</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <button class="floating-button">+</button>
+    
+    <script>
+        // Configuração do gráfico
+        const ctx = document.getElementById('claimsChart').getContext('2d');
+        
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(79, 172, 254, 0.4)');
+        gradient.addColorStop(1, 'rgba(79, 172, 254, 0.01)');
+        
+        const claimsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+                datasets: [
+                    {
+                        label: 'Automóvel',
+                        data: [65, 78, 90, 81, 95, 88, 72],
+                        borderColor: '#4facfe',
+                        backgroundColor: gradient,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Residencial',
+                        data: [45, 52, 48, 58, 62, 55, 50],
+                        borderColor: '#00f2fe',
+                        tension: 0.4,
+                        fill: false
+                    },
+                    {
+                        label: 'Vida',
+                        data: [28, 35, 32, 30, 38, 42, 36],
+                        borderColor: '#fa709a',
+                        tension: 0.4,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: '#888',
+                            padding: 20,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(255,255,255,0.05)'
+                        },
+                        ticks: {
+                            color: '#888'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(255,255,255,0.05)'
+                        },
+                        ticks: {
+                            color: '#888'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Simulação de atualizações em tempo real
+        setInterval(() => {
+            // Atualizar métricas aleatoriamente
+            const metrics = document.querySelectorAll('.metric-value');
+            const totalSinistros = document.querySelector('.metric-value');
+            const currentValue = parseInt(totalSinistros.textContent.replace(/\D/g, ''));
+            
+            // Simular novo sinistro a cada 5 segundos
+            if (Math.random() > 0.5) {
+                totalSinistros.textContent = (currentValue + 1).toLocaleString('pt-BR');
+                
+                // Adicionar animação
+                totalSinistros.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    totalSinistros.style.transform = 'scale(1)';
+                }, 300);
+            }
+        }, 5000);
+        
+        // Animação dos cards ao passar o mouse
+        document.querySelectorAll('.metric-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+        
+        // Simular clique nos números de sinistro
+        document.querySelectorAll('.claim-number').forEach(claim => {
+            claim.addEventListener('click', function() {
+                alert(`Abrindo detalhes do sinistro ${this.textContent}`);
+            });
+        });
+    </script>
+</body>
+</html>
