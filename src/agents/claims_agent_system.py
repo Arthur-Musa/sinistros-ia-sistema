@@ -5,9 +5,14 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 from enum import Enum
 import json
+import os
 from openai import OpenAI
 from pydantic import BaseModel
-from agents import Agent, Runner, ModelSettings
+from swarm import Agent, Swarm
+from dotenv import load_dotenv
+
+# Carrega variáveis de ambiente
+load_dotenv()
 
 # ===== MODELOS DE DADOS =====
 
@@ -120,6 +125,17 @@ def gerar_relatorio_final(sinistro: Dict[str, Any]) -> Dict[str, Any]:
         "timestamp": datetime.now().isoformat()
     }
 
+# ===== SISTEMA SWARM =====
+# Cliente Swarm será inicializado sob demanda
+swarm_client = None
+
+def get_swarm_client():
+    """Retorna o cliente Swarm, inicializando se necessário"""
+    global swarm_client
+    if swarm_client is None:
+        swarm_client = Swarm()
+    return swarm_client
+
 # ===== AGENTES ESPECIALIZADOS =====
 
 # 1. AGENTE DE TRIAGEM
@@ -207,56 +223,39 @@ compliance_agent = Agent(
 claims_manager = Agent(
     name="GerenteSinistros",
     model="gpt-4o",
-    model_settings=ModelSettings(
-        parallel_tool_calls=True  # Permite chamar múltiplos agentes em paralelo
-    ),
-    instructions="""Você é o Gerente de Sinistros responsável por orquestrar todo o processo de análise.
+    instructions="""Você é o Gerente de Sinistros responsável por orquestrar todo o processo 
+    de análise de sinistros de seguros.
     
-    Seu papel é:
-    1. Receber novos sinistros e coordenar a análise completa
-    2. Acionar os agentes especializados na ordem apropriada
-    3. Consolidar as análises de cada agente
-    4. Tomar a decisão final sobre aprovação/negação
-    5. Determinar o valor final da indenização
-    6. Gerar relatório executivo consolidado
+    Suas responsabilidades:
+    1. Coordenar o trabalho de todos os agentes especializados
+    2. Garantir que cada etapa do processo seja executada corretamente
+    3. Consolidar as análises e tomar a decisão final
+    4. Garantir conformidade com regulamentações
+    5. Otimizar o processo para eficiência e satisfação do cliente
     
-    Fluxo de trabalho:
-    - Primeiro, acione o Agente de Triagem
-    - Em paralelo, acione Análise e Compliance
-    - Com base nos resultados, acione o Cálculo se apropriado
+    Processo de trabalho:
+    - Use o agente de triagem para classificar o sinistro
+    - Acione o agente de análise para verificar documentação
+    - Solicite cálculo de indenização quando aplicável
+    - Verifique compliance antes de finalizar
     - Consolide tudo em uma decisão final clara e justificada
     
     Seja justo, transparente e eficiente.
     Priorize a experiência do segurado mantendo os interesses da seguradora.
     """,
-    tools=[
-        triage_agent.as_tool(
-            tool_name="triagem_sinistro",
-            tool_description="Realiza triagem inicial e classificação do sinistro"
-        ),
-        analysis_agent.as_tool(
-            tool_name="analise_documentacao",
-            tool_description="Analisa documentação e evidências do sinistro"
-        ),
-        calculation_agent.as_tool(
-            tool_name="calcular_indenizacao",
-            tool_description="Calcula o valor da indenização baseado na apólice"
-        ),
-        compliance_agent.as_tool(
-            tool_name="verificar_compliance",
-            tool_description="Verifica conformidade regulatória do processo"
-        ),
+    functions=[
+        classificar_sinistro,
+        analisar_documentacao,
+        calcular_indenizacao,
+        verificar_compliance,
         gerar_relatorio_final
     ]
 )
 
 # ===== FUNÇÕES DE EXECUÇÃO =====
 
-async def processar_sinistro(sinistro_data: Dict[str, Any]) -> Dict[str, Any]:
+def processar_sinistro(sinistro_data: Dict[str, Any]) -> Dict[str, Any]:
     """Processa um sinistro completo através do sistema multi-agente"""
-    
-    # Criar runner para executar os agentes
-    runner = Runner()
     
     # Preparar mensagem inicial com dados do sinistro
     mensagem_inicial = f"""
@@ -283,11 +282,19 @@ async def processar_sinistro(sinistro_data: Dict[str, Any]) -> Dict[str, Any]:
     Por favor, realize a análise completa deste sinistro.
     """
     
-    # Executar o gerente de sinistros
-    resultado = await runner.run(
+    # Executar o gerente de sinistros usando Swarm
+    client = get_swarm_client()
+    response = client.run(
         agent=claims_manager,
         messages=[{"role": "user", "content": mensagem_inicial}]
     )
+    
+    # Extrair resultado
+    resultado = {
+        "mensagem": response.messages[-1]["content"],
+        "agent_usado": response.agent.name if response.agent else "Desconhecido",
+        "sinistro_numero": sinistro_data['numero_sinistro']
+    }
     
     return resultado
 

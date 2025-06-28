@@ -198,7 +198,7 @@ async def executar_analise_background(numero_sinistro: str, sinistro_data: Dict[
         logger.info(f"Iniciando análise do sinistro {numero_sinistro}")
         
         # Executar processamento pelos agentes
-        resultado = await processar_sinistro(sinistro_data)
+        resultado = processar_sinistro(sinistro_data)
         
         # Atualizar status baseado no resultado
         if "aprovado" in resultado.get("decisao", "").lower():

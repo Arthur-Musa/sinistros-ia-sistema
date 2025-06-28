@@ -116,16 +116,19 @@
         
         .main-content {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
             margin-bottom: 30px;
         }
         
         .chart-container {
-            background: #1e1e2e;
+            background: #2a2a3e;
+            border-radius: 12px;
             padding: 25px;
-            border-radius: 15px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            height: 400px;
+            display: flex;
+            flex-direction: column;
             border: 1px solid rgba(255,255,255,0.05);
         }
         
@@ -309,6 +312,19 @@
             box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
         }
         
+        .chart-controls {
+            margin-bottom: 15px;
+        }
+        
+        .chart-select {
+            background: #2a2a3e;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+        
         @media (max-width: 1024px) {
             .main-content {
                 grid-template-columns: 1fr;
@@ -366,15 +382,31 @@
         
         <div class="main-content">
             <div class="chart-container">
-                <div class="chart-header">
-                    <h3 class="chart-title">Análises por Tipo de Sinistro</h3>
-                    <select style="background: #2a2a3e; color: #fff; border: 1px solid #444; padding: 8px 15px; border-radius: 5px;">
+                <h3 class="chart-title">Análises por Período</h3>
+                <div class="chart-controls">
+                    <select class="chart-select">
                         <option>Últimos 7 dias</option>
                         <option>Últimos 30 dias</option>
                         <option>Últimos 90 dias</option>
                     </select>
                 </div>
-                <canvas id="claimsChart" width="400" height="200"></canvas>
+                <div style="position: relative; flex: 1; min-height: 0;">
+                    <canvas id="claimsChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h3 class="chart-title">Análises por Tipo de Sinistro</h3>
+                <div class="chart-controls">
+                    <select class="chart-select">
+                        <option>Distribuição Atual</option>
+                        <option>Últimos 30 dias</option>
+                        <option>Últimos 90 dias</option>
+                    </select>
+                </div>
+                <div style="position: relative; flex: 1; min-height: 0;">
+                    <canvas id="typeChart"></canvas>
+                </div>
             </div>
             
             <div class="agent-status">
@@ -498,6 +530,69 @@
         gradient.addColorStop(0, 'rgba(79, 172, 254, 0.4)');
         gradient.addColorStop(1, 'rgba(79, 172, 254, 0.01)');
         
+        // Gráfico de análises por tipo
+        const typeCtx = document.getElementById('typeChart').getContext('2d');
+        const typeChart = new Chart(typeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Automóvel', 'Residencial', 'Vida', 'Empresarial', 'Saúde'],
+                datasets: [{
+                    data: [35, 25, 20, 15, 5],
+                    backgroundColor: [
+                        'rgba(79, 172, 254, 0.8)',
+                        'rgba(255, 107, 107, 0.8)',
+                        'rgba(255, 193, 7, 0.8)',
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(153, 102, 255, 0.8)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: 0
+                },
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#ffffff',
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#4facfe',
+                        borderWidth: 1,
+                        cornerRadius: 4,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += context.parsed + '%';
+                                return label;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    animateScale: true,
+                    animateRotate: true
+                }
+            }
+        });
+        
+        // Gráfico de análises por período
         const claimsChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -530,6 +625,9 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: 0
+                },
                 plugins: {
                     legend: {
                         display: true,
