@@ -1,7 +1,7 @@
 # 🤖 Sistema Inteligente de Análise de Sinistros
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/seu-usuario/sinistros-ia-sistema)
-[![CI/CD](https://github.com/seu-usuario/sinistros-ia-sistema/workflows/CI/CD%20Pipeline/badge.svg)](https://github.com/seu-usuario/sinistros-ia-sistema/actions)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/Arthur-Musa/sinistros-ia-sistema)
+[![CI/CD](https://github.com/Arthur-Musa/sinistros-ia-sistema/workflows/CI/CD%20Pipeline/badge.svg)](https://github.com/Arthur-Musa/sinistros-ia-sistema/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Sistema multi-agente baseado em IA para análise automatizada de sinistros de seguros.
@@ -21,7 +21,7 @@ Sistema multi-agente baseado em IA para análise automatizada de sinistros de se
 
 ```bash
 # Clone o repositório
-git clone https://github.com/seu-usuario/sinistros-ia-sistema.git
+git clone https://github.com/Arthur-Musa/sinistros-ia-sistema.git
 cd sinistros-ia-sistema
 
 # Instale dependências
@@ -37,7 +37,7 @@ python src/api/main.py
 
 ### Deploy Rápido (Railway)
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/seu-usuario/sinistros-ia-sistema)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/Arthur-Musa/sinistros-ia-sistema)
 
 ## 📁 Estrutura do Projeto
 
