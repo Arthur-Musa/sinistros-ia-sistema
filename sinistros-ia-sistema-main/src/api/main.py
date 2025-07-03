@@ -1,4 +1,5 @@
 from src.openai_config import *
+from src.openai_config import *
 # API REST para Sistema de Sinistros com FastAPI
 # Integração completa com o sistema multi-agente
 
