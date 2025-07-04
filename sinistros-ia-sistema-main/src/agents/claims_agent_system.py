@@ -10,6 +10,7 @@ from openai import OpenAI
 from pydantic import BaseModel
 from swarm import Agent, Swarm
 from dotenv import load_dotenv
+from .context_helper import coletar_contexto_apolice_e_historico
 
 # Carrega variáveis de ambiente
 load_dotenv()
@@ -152,6 +153,7 @@ triage_agent = Agent(
     5. Fazer triagem inicial de possíveis fraudes
     
     Analise cuidadosamente a descrição e documentos fornecidos.
+    Utilize o contexto inicial com detalhes da apólice e histórico do segurado.
     Seja preciso na classificação e justifique suas decisões.
     """,
     tools=[classificar_sinistro, consultar_historico_segurado]
@@ -172,6 +174,7 @@ analysis_agent = Agent(
     6. Recomendar investigação adicional se necessário
     
     Seja minucioso e objetivo. Documente todas as observações.
+    Leve em conta o contexto inicial com dados da apólice e histórico do segurado.
     Considere aspectos técnicos específicos do tipo de sinistro.
     """,
     tools=[analisar_documentacao, consultar_apolice]
@@ -192,6 +195,7 @@ calculation_agent = Agent(
     6. Apresentar memória de cálculo detalhada
     
     Use as coberturas e limites da apólice.
+    Considere também o histórico de sinistros do segurado presente no contexto.
     Seja transparente em todos os cálculos.
     Considere a legislação brasileira aplicável.
     """,
@@ -214,6 +218,7 @@ compliance_agent = Agent(
     
     Conheça profundamente a regulamentação de seguros brasileira.
     Seja rigoroso mas pragmático.
+    Utilize também o contexto inicial com dados da apólice e histórico do segurado.
     Priorize proteção da empresa e do segurado.
     """,
     tools=[verificar_compliance]
@@ -241,6 +246,7 @@ claims_manager = Agent(
     - Consolide tudo em uma decisão final clara e justificada
     
     Seja justo, transparente e eficiente.
+    Leve em consideração o contexto extra com detalhes da apólice e histórico do segurado.
     Priorize a experiência do segurado mantendo os interesses da seguradora.
     """,
     functions=[
@@ -256,7 +262,10 @@ claims_manager = Agent(
 
 def processar_sinistro(sinistro_data: Dict[str, Any]) -> Dict[str, Any]:
     """Processa um sinistro completo através do sistema multi-agente"""
-    
+
+    # Coletar contexto adicional
+    contexto_extra = coletar_contexto_apolice_e_historico(sinistro_data)
+
     # Preparar mensagem inicial com dados do sinistro
     mensagem_inicial = f"""
     Novo sinistro recebido para análise:
@@ -281,6 +290,10 @@ def processar_sinistro(sinistro_data: Dict[str, Any]) -> Dict[str, Any]:
     
     Por favor, realize a análise completa deste sinistro.
     """
+
+    # Incluir contexto extra no início da mensagem
+    if contexto_extra:
+        mensagem_inicial = contexto_extra + "\n\n" + mensagem_inicial
     
     # Executar o gerente de sinistros usando Swarm
     client = get_swarm_client()
