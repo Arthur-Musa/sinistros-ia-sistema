@@ -135,6 +135,14 @@ R: A API funcionará, mas a análise dos agentes retornará erro.
 **P: Os agentes aprendem com o tempo?**
 R: Cada análise é independente, mas você pode ajustar as instruções dos agentes.
 
+## 🔧 Personalizando o Contexto Inicial
+
+A função `coletar_contexto_apolice_e_historico` (em `src/agents/context_helper.py`)
+monta um texto com detalhes da apólice e histórico do segurado que é enviado aos
+agentes. Edite essa função para consultar seus bancos ou APIs internas e incluir
+informações relevantes para o seu negócio. Basta retornar uma string com o
+conteúdo desejado.
+
 ## 🎯 Teste Agora!
 
 1. Execute: `python exemplo_uso_completo.py`
