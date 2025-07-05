@@ -27,6 +27,10 @@ except ImportError as e:
     print(f"ERRO CRÍTICO: {e}")
     USE_AI = False
 
+# Modelos de linguagem
+DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
+FALLBACK_MODEL = os.getenv("OPENAI_MODEL_FALLBACK", "gpt-4o-mini")
+
 # Enums do sistema
 class TipoSinistro(str, Enum):
     AUTOMOVEL = "automovel"
@@ -72,7 +76,7 @@ class SistemaMultiAgente:
         # 1. AGENTE DE TRIAGEM
         self.agente_triagem = Agent(
             name="AgenteTriagem",
-            model="gpt-4o",
+            model=DEFAULT_MODEL,
             instructions="""Você é o Agente de Triagem especializado. Suas responsabilidades:
             1. Classificar o tipo de sinistro (automóvel, residencial, vida, empresarial, saúde)
             2. Validar informações básicas
@@ -87,7 +91,7 @@ class SistemaMultiAgente:
         # 2. AGENTE DE ANÁLISE
         self.agente_analise = Agent(
             name="AgenteAnalise", 
-            model="gpt-4o",
+            model=DEFAULT_MODEL,
             instructions="""Você é o Agente de Análise de Documentos. Suas responsabilidades:
             1. Verificar autenticidade dos documentos
             2. Identificar inconsistências
@@ -101,7 +105,7 @@ class SistemaMultiAgente:
         # 3. AGENTE DE CÁLCULO
         self.agente_calculo = Agent(
             name="AgenteCalculo",
-            model="gpt-4o", 
+            model=DEFAULT_MODEL, 
             instructions="""Você é o Agente de Cálculo de Indenizações. Suas responsabilidades:
             1. Calcular valor base conforme apólice
             2. Aplicar franquias e deduções
@@ -116,7 +120,7 @@ class SistemaMultiAgente:
         # 4. AGENTE DE COMPLIANCE
         self.agente_compliance = Agent(
             name="AgenteCompliance",
-            model="gpt-4o",
+            model=DEFAULT_MODEL,
             instructions="""Você é o Agente de Compliance. Suas responsabilidades:
             1. Verificar conformidade SUSEP
             2. Garantir LGPD
@@ -130,7 +134,7 @@ class SistemaMultiAgente:
         # 5. AGENTE GERENTE (Orquestrador)
         self.agente_gerente = Agent(
             name="GerenteSinistros",
-            model="gpt-4o",
+            model=DEFAULT_MODEL,
             instructions="""Você é o Gerente de Sinistros que coordena os 5 agentes:
             1. AgenteTriagem - classificação inicial
             2. AgenteAnalise - análise de documentos  
@@ -154,37 +158,85 @@ class SistemaMultiAgente:
         try:
             # 1. TRIAGEM
             msg_triagem = f"Classifique este sinistro: {sinistro_data.get('descricao')}. Documentos: {sinistro_data.get('documentos')}"
-            resp_triagem = self.swarm.run(
-                agent=self.agente_triagem,
-                messages=[{"role": "user", "content": msg_triagem}]
-            )
+            try:
+                resp_triagem = self.swarm.run(
+                    agent=self.agente_triagem,
+                    messages=[{"role": "user", "content": msg_triagem}]
+                )
+            except Exception:
+                fallback = Agent(
+                    name=self.agente_triagem.name,
+                    model=FALLBACK_MODEL,
+                    instructions=self.agente_triagem.instructions,
+                    tools=getattr(self.agente_triagem, "tools", None),
+                )
+                resp_triagem = self.swarm.run(
+                    agent=fallback,
+                    messages=[{"role": "user", "content": msg_triagem}]
+                )
             resultados["triagem"] = resp_triagem.messages[-1]["content"]
             resultados["agentes_executados"].append("Triagem")
             
             # 2. ANÁLISE
             msg_analise = f"Analise os documentos: {sinistro_data.get('documentos')} para o sinistro {sinistro_data.get('numero_sinistro')}"
-            resp_analise = self.swarm.run(
-                agent=self.agente_analise,
-                messages=[{"role": "user", "content": msg_analise}]
-            )
+            try:
+                resp_analise = self.swarm.run(
+                    agent=self.agente_analise,
+                    messages=[{"role": "user", "content": msg_analise}]
+                )
+            except Exception:
+                fallback = Agent(
+                    name=self.agente_analise.name,
+                    model=FALLBACK_MODEL,
+                    instructions=self.agente_analise.instructions,
+                    tools=getattr(self.agente_analise, "tools", None),
+                )
+                resp_analise = self.swarm.run(
+                    agent=fallback,
+                    messages=[{"role": "user", "content": msg_analise}]
+                )
             resultados["analise_docs"] = resp_analise.messages[-1]["content"]
             resultados["agentes_executados"].append("Análise")
             
             # 3. CÁLCULO
             msg_calculo = f"Calcule a indenização. Valor estimado: R$ {sinistro_data.get('valor_estimado', 0)}"
-            resp_calculo = self.swarm.run(
-                agent=self.agente_calculo,
-                messages=[{"role": "user", "content": msg_calculo}]
-            )
+            try:
+                resp_calculo = self.swarm.run(
+                    agent=self.agente_calculo,
+                    messages=[{"role": "user", "content": msg_calculo}]
+                )
+            except Exception:
+                fallback = Agent(
+                    name=self.agente_calculo.name,
+                    model=FALLBACK_MODEL,
+                    instructions=self.agente_calculo.instructions,
+                    tools=getattr(self.agente_calculo, "tools", None),
+                )
+                resp_calculo = self.swarm.run(
+                    agent=fallback,
+                    messages=[{"role": "user", "content": msg_calculo}]
+                )
             resultados["calculo"] = resp_calculo.messages[-1]["content"]
             resultados["agentes_executados"].append("Cálculo")
             
             # 4. COMPLIANCE
             msg_compliance = f"Verifique compliance para sinistro {sinistro_data.get('numero_sinistro')}"
-            resp_compliance = self.swarm.run(
-                agent=self.agente_compliance,
-                messages=[{"role": "user", "content": msg_compliance}]
-            )
+            try:
+                resp_compliance = self.swarm.run(
+                    agent=self.agente_compliance,
+                    messages=[{"role": "user", "content": msg_compliance}]
+                )
+            except Exception:
+                fallback = Agent(
+                    name=self.agente_compliance.name,
+                    model=FALLBACK_MODEL,
+                    instructions=self.agente_compliance.instructions,
+                    tools=getattr(self.agente_compliance, "tools", None),
+                )
+                resp_compliance = self.swarm.run(
+                    agent=fallback,
+                    messages=[{"role": "user", "content": msg_compliance}]
+                )
             resultados["compliance"] = resp_compliance.messages[-1]["content"]
             resultados["agentes_executados"].append("Compliance")
             
@@ -198,10 +250,22 @@ class SistemaMultiAgente:
             
             Tome a decisão final para o sinistro {sinistro_data.get('numero_sinistro')}
             """
-            resp_final = self.swarm.run(
-                agent=self.agente_gerente,
-                messages=[{"role": "user", "content": msg_final}]
-            )
+            try:
+                resp_final = self.swarm.run(
+                    agent=self.agente_gerente,
+                    messages=[{"role": "user", "content": msg_final}]
+                )
+            except Exception:
+                fallback = Agent(
+                    name=self.agente_gerente.name,
+                    model=FALLBACK_MODEL,
+                    instructions=self.agente_gerente.instructions,
+                    tools=getattr(self.agente_gerente, "tools", None),
+                )
+                resp_final = self.swarm.run(
+                    agent=fallback,
+                    messages=[{"role": "user", "content": msg_final}]
+                )
             resultados["decisao_final"] = resp_final.messages[-1]["content"]
             resultados["agentes_executados"].append("Gerente")
             

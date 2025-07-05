@@ -14,6 +14,10 @@ from dotenv import load_dotenv
 # Carrega variáveis de ambiente
 load_dotenv()
 
+# Modelos configuráveis
+DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
+FALLBACK_MODEL = os.getenv("OPENAI_MODEL_FALLBACK", "gpt-4o-mini")
+
 # ===== MODELOS DE DADOS =====
 
 class TipoSinistro(str, Enum):
@@ -141,7 +145,7 @@ def get_swarm_client():
 # 1. AGENTE DE TRIAGEM
 triage_agent = Agent(
     name="AgenteTriagem",
-    model="gpt-4o",
+    model=DEFAULT_MODEL,
     instructions="""Você é um Agente de Triagem especializado em sinistros de seguros.
     
     Suas responsabilidades:
@@ -160,7 +164,7 @@ triage_agent = Agent(
 # 2. AGENTE DE ANÁLISE
 analysis_agent = Agent(
     name="AgenteAnalise",
-    model="gpt-4o",
+    model=DEFAULT_MODEL,
     instructions="""Você é um Agente de Análise de Sinistros especializado.
     
     Suas responsabilidades:
@@ -180,7 +184,7 @@ analysis_agent = Agent(
 # 3. AGENTE DE CÁLCULO
 calculation_agent = Agent(
     name="AgenteCalculo",
-    model="gpt-4o",
+    model=DEFAULT_MODEL,
     instructions="""Você é um Agente de Cálculo de Indenizações especializado.
     
     Suas responsabilidades:
@@ -201,7 +205,7 @@ calculation_agent = Agent(
 # 4. AGENTE DE COMPLIANCE
 compliance_agent = Agent(
     name="AgenteCompliance",
-    model="gpt-4o",
+    model=DEFAULT_MODEL,
     instructions="""Você é um Agente de Compliance especializado em seguros.
     
     Suas responsabilidades:
@@ -222,7 +226,7 @@ compliance_agent = Agent(
 # 5. AGENTE GERENTE DE SINISTROS (Orquestrador)
 claims_manager = Agent(
     name="GerenteSinistros",
-    model="gpt-4o",
+    model=DEFAULT_MODEL,
     instructions="""Você é o Gerente de Sinistros responsável por orquestrar todo o processo 
     de análise de sinistros de seguros.
     

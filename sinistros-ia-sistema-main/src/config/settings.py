@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     # API Keys
     OPENAI_API_KEY: str
     OPENAI_MODEL: str = "gpt-4o"
+    OPENAI_MODEL_FALLBACK: str = "gpt-4o-mini"
     
     # Banco de Dados
     DATABASE_URL: str = "postgresql://user:pass@localhost/sinistros_db"
