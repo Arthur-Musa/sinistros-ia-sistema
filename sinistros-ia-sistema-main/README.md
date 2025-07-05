@@ -30,6 +30,7 @@ pip install -r requirements.txt
 # Configure variáveis de ambiente
 cp .env.example .env
 # Edite .env e adicione sua OPENAI_API_KEY
+# Opcionalmente defina OPENAI_MODEL e OPENAI_MODEL_FALLBACK
 
 # Execute o sistema
 python src/api/main.py
