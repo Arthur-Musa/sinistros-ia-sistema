@@ -4,10 +4,6 @@
     {
       "src": "src/api/main_production.py",
       "use": "@vercel/python"
-    },
-    {
-      "src": "src/api/main_production.py",
-      "use": "@vercel/python"
     }
   ],
   "routes": [
